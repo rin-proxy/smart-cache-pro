@@ -34,8 +34,8 @@ node test/compress.test.mjs
 ## Status
 **v0.1.0** — grounded against `openclaw@2026.5.28` hook types; compressor unit-tested (9/9).
 **Gate-1 live-test PASSED** on a real OpenClaw 2026.5.28 gateway: the plugin loads, all 3 hooks
-register, and `register()` runs. Gate-2 (a verbose tool-output getting rewritten end-to-end) lands
-the first time a big tool runs after install. Known gap: `tool_result_persist` does not fire in
+register, and `register()` runs. **Gate-2 also PASSED** — confirmed on a real OpenClaw agent run:
+a 150-line `seq` tool output was auto-compressed and the full output tee'd to disk. Known gap: `tool_result_persist` does not fire in
 embedded/subagent runs ([openclaw#60209](https://github.com/openclaw/openclaw/issues/60209)).
 
 *By Rin / DemiGod.*
