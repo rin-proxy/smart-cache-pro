@@ -1,0 +1,28 @@
+{
+  "id": "smart-cache-pro",
+  "name": "Smart Cache Pro",
+  "description": "Automatic RTK-style compression of verbose tool output + deterministic pre-compaction snapshot. By Rin.",
+  "activation": { "onStartup": true },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": { "type": "boolean", "default": true },
+      "minLines": {
+        "type": "integer",
+        "default": 40,
+        "description": "Only compress tool output with at least this many lines."
+      },
+      "teeDir": {
+        "type": "string",
+        "description": "Where full outputs are saved before compression. Default: <workspace>/memory/cache/tee"
+      },
+      "denyTools": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": [],
+        "description": "Tool names to never compress (e.g. tools whose output must stay verbatim)."
+      }
+    }
+  }
+}

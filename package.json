@@ -1,0 +1,22 @@
+{
+  "name": "smart-cache-pro",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Automatic, enforced token compression for OpenClaw agents — the typed-plugin v2 of smart-cache.",
+  "license": "UNLICENSED",
+  "author": "Rin",
+  "openclaw": {
+    "extensions": ["./index.js"],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2",
+      "minGatewayVersion": "2026.3.24-beta.2"
+    },
+    "build": {
+      "openclawVersion": "2026.5.28",
+      "pluginSdkVersion": "2026.5.28"
+    }
+  },
+  "scripts": {
+    "test": "node test/compress.test.mjs"
+  }
+}
