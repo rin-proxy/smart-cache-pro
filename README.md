@@ -35,6 +35,38 @@ instant compaction fires.
 - **Nothing lost** — full output tee'd to disk (an `[full output: …]` pointer is left inline) + pre-compaction snapshot.
 - **Zero behavior change** — the agent just sees smaller tool results; defensive by design (on any error it returns the original, so it can never break a tool call).
 
+## Example: before → after
+
+The agent runs `git diff` and the tool dumps **13 lines**:
+```diff
+diff --git a/src/app.js b/src/app.js
+index 3f1a2b..8c4d9e 100644
+--- a/src/app.js
++++ b/src/app.js
+@@ -12,7 +12,7 @@ function handleRequest(req, res) {
+   const user = req.user;
+   const data = await fetchData(user.id);
+   logger.info("fetched");
+-  return res.json(data);
++  return res.json({ ...data, cached: true });
+   // unreachable
+ }
+```
+
+What actually **enters the agent's context** — just the file markers + the real change:
+```diff
+--- a/src/app.js
++++ b/src/app.js
+-  return res.json(data);
++  return res.json({ ...data, cached: true });
+[full output: ~/.openclaw/workspace/memory/cache/tee/out-20260612093012-6350-0.log]
+```
+
+**13 lines → 4.** The full diff stays on disk (the `[full output: …]` pointer); the agent
+reads it only if it needs the surrounding context. Other modes: **logs** dedup repeats
+(`GET /health 200  (×200)`) and surface errors; **grep** groups hits by file
+(`app.js: 12, 48, 91`); oversized generic output is head+tail-trimmed with an elision marker.
+
 ## Two engines, both automatic
 1. **Auto-compress** — a `tool_result_persist` hook compresses every verbose tool result
    (RTK-style: dedup / group-by-file / smart-truncate) **before it enters context**. The full
@@ -69,4 +101,4 @@ register, and `register()` runs. **Gate-2 also PASSED** — confirmed on a real 
 a 150-line `seq` tool output was auto-compressed and the full output tee'd to disk. Known gap: `tool_result_persist` does not fire in
 embedded/subagent runs ([openclaw#60209](https://github.com/openclaw/openclaw/issues/60209)).
 
-*By Rin / DemiGod.*
+*By Rin.*
