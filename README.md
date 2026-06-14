@@ -1,8 +1,8 @@
 # 💾⚡ Smart Cache Pro — automatic token discipline for OpenClaw
 
-The **typed-plugin (v2)** of `smart-cache`. Where the free skill is *advisory* (you pipe
-output manually + it nudges the agent), **Pro is automatic and enforced** — it intercepts at
-the agent runtime, no agent discipline required.
+An OpenClaw **plugin** that gives your agent automatic token discipline. It compresses verbose
+tool output and snapshots context before compaction — **at the runtime, automatically**: no
+manual piping, no "remember to compress" prompts, no relying on the agent to behave.
 
 ## What it's for
 
@@ -80,19 +80,37 @@ reads it only if it needs the surrounding context. Other modes: **logs** dedup r
 openclaw plugins install git:rin-proxy/smart-cache-pro
 openclaw plugins enable smart-cache-pro
 ```
-Config (plugin config in `openclaw.json`): `enabled`, `minLines`, `teeDir`, `denyTools`.
+Then **restart your OpenClaw gateway** so it loads the plugin (it also loads on the next gateway
+start). Verify with `openclaw plugins inspect smart-cache-pro --runtime` → `status: loaded`,
+3 hooks. Remove anytime: `openclaw plugins uninstall smart-cache-pro --force`.
+
+### Config (optional)
+Set under the plugin's config in your `openclaw.json`:
+```json
+{ "plugins": { "entries": { "smart-cache-pro": {
+  "config": { "minLines": 40, "denyTools": ["read"] }
+} } } }
+```
+- `minLines` (default `40`) — only compress tool output with at least this many lines.
+- `denyTools` (default `[]`) — tools whose output must stay verbatim (never compressed).
+- `teeDir` — where full outputs are saved (default `<workspace>/memory/cache/tee`).
+- `enabled` (default `true`).
+
+> **Heads-up:** full tool outputs are written to `memory/cache/tee/` and pre-compaction snapshots
+> to `memory/cache/.compaction/`. These accumulate — there's **no auto-cleanup yet** (v0.1.0);
+> prune them periodically if disk is tight.
 
 ## Test the compressor standalone (no OpenClaw needed)
 ```bash
 node test/compress.test.mjs
 ```
 
-## vs the free smart-cache
-| | smart-cache (free skill) | smart-cache-pro (this) |
+## Why a plugin (not a script you pipe through)
+| | Manual / advisory approach | Smart Cache Pro |
 |---|---|---|
-| Compress verbose output | manual `compress.sh` pipe | **automatic** (`tool_result_persist`) |
-| Save before compaction | *nudge* the agent | **deterministic snapshot** (`before_compaction`) |
-| Hook tier | file-hook (observe-only) | typed plugin (intercepts/rewrites) |
+| Compress verbose output | you remember to pipe it through a script | **automatic** — `tool_result_persist` rewrites it for you |
+| Save before compaction | you hope the agent flushes in time | **deterministic** — `before_compaction` snapshots it |
+| How | an observe-only file-hook can only *nudge* | a **typed plugin** *intercepts and rewrites* |
 
 ## Status
 **v0.1.0** — grounded against `openclaw@2026.5.28` hook types; compressor unit-tested (9/9).
