@@ -26,8 +26,10 @@ export default definePluginEntry({
       process.env.OPENCLAW_WORKSPACE ||
       api.config?.workspaceDir ||
       join(homedir(), ".openclaw", "workspace");
-    const teeDir = cfg.teeDir || join(ws, "memory", "cache", "tee");
-    const compDir = join(ws, "memory", "cache", ".compaction");
+    const cacheDir = join(ws, "memory", "cache");
+    const teeDir = cfg.teeDir || join(cacheDir, "tee");
+    const compDir = join(cacheDir, ".compaction");
+    const statsFile = join(cacheDir, "stats.jsonl");          // v0.2.0 — savings ledger (one line / compression)
     const log = api.logger;
 
     // ── Engine A — auto-compress verbose tool output. SYNC: no async/await here. ──
@@ -42,8 +44,19 @@ export default definePluginEntry({
         const text = blocks[i].text;
         if (lineCount(text) < minLines) return;             // leave small results alone
         const teePath = teeFullSync(text, teeDir);           // save FULL output first (nothing lost)
-        const out = compress(text, detectKind(text), { maxLines: minLines });
+        const kind = detectKind(text);
+        const out = compress(text, kind, { maxLines: minLines });
         if (!out) return;                                    // compression wouldn't help → untouched
+        try {                                                // v0.2.0 — savings ledger (best-effort; never affects the result)
+          mkdirSync(cacheDir, { recursive: true });
+          appendFileSync(statsFile, JSON.stringify({
+            at: new Date().toISOString(),
+            tool: ctx?.toolName ?? event?.toolName ?? "?",
+            kind,
+            linesIn: lineCount(text), linesOut: lineCount(out),
+            charsIn: text.length, charsOut: out.length,
+          }) + "\n");
+        } catch { /* stats are best-effort — never let a ledger write affect the tool result */ }
         const content = blocks.slice();
         content[i] = { type: "text", text: out + (teePath ? `\n[full output: ${teePath}]` : "") };
         return { message: { ...msg, content } };             // ← replaces the persisted tool result

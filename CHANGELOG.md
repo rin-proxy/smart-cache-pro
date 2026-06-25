@@ -1,5 +1,14 @@
 # Changelog — smart-cache-pro
 
+## 0.2.0 (2026-06-25)
+- **Savings ledger** — Engine A now appends one line per compression to
+  `memory/cache/stats.jsonl` (`at, tool, kind, linesIn/Out, charsIn/Out`). Best-effort and
+  wrapped in its own try/catch, so a ledger write can never affect the tool result.
+- **`scripts/report.mjs`** — prints a savings report (today + all-time): lines/tokens saved,
+  breakdown by output kind, top tools, and pre-compaction snapshot counts. Pure Node, no deps.
+  `node scripts/report.mjs [--brief] [--rate <usd/Mtok>] [--workspace <dir>]` (also `npm run report`).
+- Token figures are explicit **estimates** (`chars ÷ 4`), never billed counts — receipts, not claims.
+
 ## 0.1.0 (2026-06-11)
 - Initial typed-plugin (v2) build of smart-cache.
 - **Engine A** — `tool_result_persist` (SYNC) auto-compresses verbose tool output. RTK-style

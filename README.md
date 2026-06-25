@@ -34,6 +34,7 @@ instant compaction fires.
 - **Lower token spend** — verbose output shrinks before it hits context; signal kept, not blindly cut.
 - **Nothing lost** — full output tee'd to disk (an `[full output: …]` pointer is left inline) + pre-compaction snapshot.
 - **Zero behavior change** — the agent just sees smaller tool results; defensive by design (on any error it returns the original, so it can never break a tool call).
+- **Receipts** — every compression is logged; run `node scripts/report.mjs` to see the tokens you actually saved (see *Proof* below).
 
 ## Example: before → after
 
@@ -75,6 +76,30 @@ reads it only if it needs the surrounding context. Other modes: **logs** dedup r
    about-to-be-compacted messages to `memory/cache/.compaction/`, and audits each compaction.
    Nothing depends on the agent remembering to save.
 
+## Proof — what you actually saved
+
+Every compression is logged to `memory/cache/stats.jsonl` (one line each). Print a report
+anytime — no OpenClaw needed, no extra deps:
+
+```bash
+node scripts/report.mjs            # full report (today + all-time)
+node scripts/report.mjs --brief    # one-line summary
+node scripts/report.mjs --rate 15  # also show est. cost saved at $15 / 1M tokens (your number)
+```
+
+```text
+  COMPRESSION (tool output)              today        all-time
+  ────────────────────────────────────────────────────────────
+  tool dumps compressed                     38             412
+  lines  in → out                 6,910 → 1,204   78,330 → 12,668
+  lines saved                            5,706          65,662
+  est. tokens saved  (~chars÷4)         ~46.6k          ~512k
+  avg compression                          83%             84%
+```
+
+Token figures are **estimates** (`chars ÷ 4`), not billed counts — kept honest on purpose. Full
+outputs stay in `memory/cache/tee/`, so nothing the report counts as "saved" is ever actually lost.
+
 ## Install
 ```bash
 openclaw plugins install git:rin-proxy/smart-cache-pro
@@ -96,9 +121,9 @@ Set under the plugin's config in your `openclaw.json`:
 - `teeDir` — where full outputs are saved (default `<workspace>/memory/cache/tee`).
 - `enabled` (default `true`).
 
-> **Heads-up:** full tool outputs are written to `memory/cache/tee/` and pre-compaction snapshots
-> to `memory/cache/.compaction/`. These accumulate — there's **no auto-cleanup yet** (v0.1.0);
-> prune them periodically if disk is tight.
+> **Heads-up:** full tool outputs are written to `memory/cache/tee/`, pre-compaction snapshots
+> to `memory/cache/.compaction/`, and the savings ledger to `memory/cache/stats.jsonl`. These
+> accumulate — there's **no auto-cleanup yet**; prune them periodically if disk is tight.
 
 ## Test the compressor standalone (no OpenClaw needed)
 ```bash
@@ -113,7 +138,8 @@ node test/compress.test.mjs
 | How | an observe-only file-hook can only *nudge* | a **typed plugin** *intercepts and rewrites* |
 
 ## Status
-**v0.1.0** — grounded against `openclaw@2026.5.28` hook types; compressor unit-tested (9/9).
+**v0.2.0** — grounded against `openclaw@2026.5.28` hook types; compressor unit-tested (9/9);
+savings ledger + `scripts/report.mjs` added (v0.2.0).
 **Gate-1 live-test PASSED** on a real OpenClaw 2026.5.28 gateway: the plugin loads, all 3 hooks
 register, and `register()` runs. **Gate-2 also PASSED** — confirmed on a real OpenClaw agent run:
 a 150-line `seq` tool output was auto-compressed and the full output tee'd to disk. Known gap: `tool_result_persist` does not fire in
