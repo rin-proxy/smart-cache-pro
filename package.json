@@ -1,6 +1,6 @@
 {
   "name": "smart-cache-pro",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "Automatic token compression + pre-compaction snapshots for OpenClaw agents — a typed plugin.",
   "license": "UNLICENSED",

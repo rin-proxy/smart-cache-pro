@@ -3,11 +3,25 @@
 // Engine B: deterministic pre-compaction snapshot via `before_compaction` — no agent discipline needed.
 // Grounded against openclaw@2026.5.28 hook types. Defensive: any error leaves the original untouched.
 import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
-import { mkdirSync, writeFileSync, appendFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, appendFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { compress, detectKind, lineCount } from "./src/compress.js";
 import { teeFullSync } from "./src/tee.js";
+
+// v0.3.0 — retention: remove files older than `days` from `dir` (skip names in `keep`). Best-effort.
+function pruneOld(dir, days, keep = []) {
+  if (!days || days <= 0) return 0;
+  let removed = 0;
+  try {
+    const cutoff = Date.now() - days * 86400000;
+    for (const f of readdirSync(dir)) {
+      if (keep.includes(f)) continue;
+      try { if (statSync(join(dir, f)).mtimeMs < cutoff) { unlinkSync(join(dir, f)); removed++; } } catch {}
+    }
+  } catch { /* dir may not exist yet */ }
+  return removed;
+}
 
 export default definePluginEntry({
   id: "smart-cache-pro",
@@ -31,6 +45,13 @@ export default definePluginEntry({
     const compDir = join(cacheDir, ".compaction");
     const statsFile = join(cacheDir, "stats.jsonl");          // v0.2.0 — savings ledger (one line / compression)
     const log = api.logger;
+
+    // ── v0.3.0 — retention: prune old tee files + compaction snapshots on load (best-effort). ──
+    const retentionDays = Number.isInteger(cfg.retentionDays) ? cfg.retentionDays : 14;
+    if (retentionDays > 0) {
+      const pruned = pruneOld(teeDir, retentionDays) + pruneOld(compDir, retentionDays, ["audit.log"]);
+      if (pruned) log?.info?.(`smart-cache-pro pruned ${pruned} old cache file(s) (>${retentionDays}d)`);
+    }
 
     // ── Engine A — auto-compress verbose tool output. SYNC: no async/await here. ──
     api.on("tool_result_persist", (event, ctx) => {

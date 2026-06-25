@@ -1,5 +1,10 @@
 # Changelog — smart-cache-pro
 
+## 0.3.0 (2026-06-25)
+- **Retention / auto-cleanup** — on load, prune `tee/` outputs and `.compaction/` snapshots older
+  than `retentionDays` (default 14; `0` = keep forever). `audit.log` and the `stats.jsonl` ledger are
+  never pruned. Best-effort; closes the "no auto-cleanup yet" gap from v0.1.0–0.2.0.
+
 ## 0.2.0 (2026-06-25)
 - **Savings ledger** — Engine A now appends one line per compression to
   `memory/cache/stats.jsonl` (`at, tool, kind, linesIn/Out, charsIn/Out`). Best-effort and

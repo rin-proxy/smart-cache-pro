@@ -119,11 +119,12 @@ Set under the plugin's config in your `openclaw.json`:
 - `minLines` (default `40`) — only compress tool output with at least this many lines.
 - `denyTools` (default `[]`) — tools whose output must stay verbatim (never compressed).
 - `teeDir` — where full outputs are saved (default `<workspace>/memory/cache/tee`).
+- `retentionDays` (default `14`) — on load, prune `tee/` outputs + `.compaction/` snapshots older than this. `0` = keep forever.
 - `enabled` (default `true`).
 
-> **Heads-up:** full tool outputs are written to `memory/cache/tee/`, pre-compaction snapshots
-> to `memory/cache/.compaction/`, and the savings ledger to `memory/cache/stats.jsonl`. These
-> accumulate — there's **no auto-cleanup yet**; prune them periodically if disk is tight.
+> **Disk use:** full tool outputs are written to `memory/cache/tee/`, pre-compaction snapshots to
+> `memory/cache/.compaction/`, and the savings ledger to `memory/cache/stats.jsonl`. As of v0.3.0 the
+> first two are **auto-pruned** on load past `retentionDays` (the `audit.log` and the ledger are kept).
 
 ## Test the compressor standalone (no OpenClaw needed)
 ```bash
@@ -138,8 +139,8 @@ node test/compress.test.mjs
 | How | an observe-only file-hook can only *nudge* | a **typed plugin** *intercepts and rewrites* |
 
 ## Status
-**v0.2.0** — grounded against `openclaw@2026.5.28` hook types; compressor unit-tested (9/9);
-savings ledger + `scripts/report.mjs` added (v0.2.0).
+**v0.3.0** — grounded against `openclaw@2026.5.28` hook types; compressor unit-tested (9/9);
+savings ledger + `scripts/report.mjs` (v0.2.0); retention/auto-cleanup (v0.3.0).
 **Gate-1 live-test PASSED** on a real OpenClaw 2026.5.28 gateway: the plugin loads, all 3 hooks
 register, and `register()` runs. **Gate-2 also PASSED** — confirmed on a real OpenClaw agent run:
 a 150-line `seq` tool output was auto-compressed and the full output tee'd to disk. Known gap: `tool_result_persist` does not fire in

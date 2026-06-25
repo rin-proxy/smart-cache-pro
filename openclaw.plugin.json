@@ -22,6 +22,11 @@
         "items": { "type": "string" },
         "default": [],
         "description": "Tool names to never compress (e.g. tools whose output must stay verbatim)."
+      },
+      "retentionDays": {
+        "type": "integer",
+        "default": 14,
+        "description": "On load, delete tee files + compaction snapshots older than this many days. 0 = keep forever."
       }
     }
   }
